@@ -1,34 +1,82 @@
-#' Flipped cartesian coordinates.
+#' Cartesian coordinates with x and y flipped
 #'
-#' Flipped cartesian coordinates so that horizontal becomes vertical, and
+#' Flip cartesian coordinates so that horizontal becomes vertical, and
 #' vertical, horizontal. This is primarily useful for converting geoms and
 #' statistics which display y conditional on x, to x conditional on y.
 #'
 #' @export
-#' @param ... Other arguments passed onto \code{\link{coord_cartesian}}
+#' @inheritParams coord_cartesian
 #' @examples
-#' \donttest{
 #' # Very useful for creating boxplots, and other interval
 #' # geoms in the horizontal instead of vertical position.
-#' qplot(cut, price, data=diamonds, geom="boxplot")
-#' last_plot() + coord_flip()
 #'
-#' qplot(cut, data=diamonds, geom="bar")
-#' last_plot() + coord_flip()
+#' ggplot(diamonds, aes(cut, price)) +
+#'   geom_boxplot() +
+#'   coord_flip()
 #'
-#' h <- qplot(carat, data=diamonds, geom="histogram")
+#' h <- ggplot(diamonds, aes(carat)) +
+#'   geom_histogram()
 #' h
 #' h + coord_flip()
 #' h + coord_flip() + scale_x_reverse()
 #'
-#' # You can also use it to flip lines and area plots:
-#' qplot(1:5, (1:5)^2, geom="area")
+#' # You can also use it to flip line and area plots:
+#' df <- data.frame(x = 1:5, y = (1:5) ^ 2)
+#' ggplot(df, aes(x, y)) +
+#'   geom_area()
 #' last_plot() + coord_flip()
-#' }
-coord_flip <- function(...) {
-  coord <- coord_cartesian(...)
-  structure(coord, class = c("flip", class(coord)))
+coord_flip <- function(xlim = NULL, ylim = NULL, expand = TRUE, clip = "on") {
+  ggproto(NULL, CoordFlip,
+    limits = list(x = xlim, y = ylim),
+    expand = expand,
+    clip = clip
+  )
 }
+
+#' @rdname ggplot2-ggproto
+#' @format NULL
+#' @usage NULL
+#' @export
+CoordFlip <- ggproto("CoordFlip", CoordCartesian,
+
+  transform = function(data, panel_params) {
+    data <- flip_labels(data)
+    CoordCartesian$transform(data, panel_params)
+  },
+
+  backtransform_range = function(self, panel_params) {
+    self$range(panel_params)
+  },
+
+  range = function(panel_params) {
+    # summarise_layout() expects the original x and y ranges here,
+    # not the ones we would get after flipping the axes
+    list(x = panel_params$y.range, y = panel_params$x.range)
+  },
+
+  setup_panel_params = function(self, scale_x, scale_y, params = list()) {
+    parent <- ggproto_parent(CoordCartesian, self)
+    panel_params <- parent$setup_panel_params(scale_x, scale_y, params)
+    flip_labels(panel_params)
+  },
+
+  labels = function(panel_params) {
+    flip_labels(CoordCartesian$labels(panel_params))
+  },
+
+  setup_layout = function(layout, params) {
+    # Switch the scales
+    layout[c("SCALE_X", "SCALE_Y")] <- layout[c("SCALE_Y", "SCALE_X")]
+    layout
+  },
+
+  modify_scales = function(scales_x, scales_y) {
+    lapply(scales_x, scale_flip_position)
+    lapply(scales_y, scale_flip_position)
+  }
+
+)
+
 
 flip_labels <- function(x) {
   old_names <- names(x)
@@ -39,28 +87,4 @@ flip_labels <- function(x) {
   new_names <- gsub("^z", "y", new_names)
 
   setNames(x, new_names)
-}
-
-#' @export
-is.linear.flip <- function(coord) TRUE
-
-#' @export
-coord_transform.flip <- function(coord, data, details) {
-  data <- flip_labels(data)
-  NextMethod()
-}
-
-#' @export
-coord_range.flip <- function(coord, scales) {
-  return(list(x = scales$y.range, y = scales$x.range))
-}
-
-#' @export
-coord_train.flip <- function(coord, scales) {
-  flip_labels(NextMethod())
-}
-
-#' @export
-coord_labels.flip <- function(coord, scales) {
-  flip_labels(NextMethod())
 }

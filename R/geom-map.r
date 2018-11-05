@@ -1,18 +1,17 @@
 #' @include geom-polygon.r
 NULL
 
-#' Polygons from a reference map.
+#' Polygons from a reference map
 #'
-#' Does not affect position scales.
+#' This is pure annotation, so does not affect position scales.
 #'
-#' @section Aesthetics:
-#' \Sexpr[results=rd,stage=build]{ggplot2:::rd_aesthetics("geom", "map")}
-#'
+#' @eval rd_aesthetics("geom", "map")
 #' @export
 #' @param map Data frame that contains the map coordinates.  This will
-#'   typically be created using \code{\link{fortify}} on a spatial object.
-#'   It must contain columns \code{x} or \code{long}, \code{y} or
-#'   \code{lat}, and \code{region} or \code{id}.
+#'   typically be created using [fortify()] on a spatial object.
+#'   It must contain columns `x` or `long`, `y` or
+#'   `lat`, and `region` or `id`.
+#' @inheritParams layer
 #' @inheritParams geom_point
 #' @examples
 #' # When using geom_polygon, you will typically need two data frames:
@@ -35,7 +34,8 @@ NULL
 #'   2.2, 2.1, 1.7, 2.1, 3.2, 2.8, 2.1, 2.2, 3.3, 3.2)
 #' )
 #'
-#' ggplot(values) + geom_map(aes(map_id = id), map = positions) +
+#' ggplot(values) +
+#'   geom_map(aes(map_id = id), map = positions) +
 #'   expand_limits(positions)
 #' ggplot(values, aes(fill = value)) +
 #'   geom_map(aes(map_id = id), map = positions) +
@@ -46,8 +46,7 @@ NULL
 #'
 #' # Better example
 #' crimes <- data.frame(state = tolower(rownames(USArrests)), USArrests)
-#' library(reshape2) # for melt
-#' crimesm <- melt(crimes, id = 1)
+#' crimesm <- reshape2::melt(crimes, id = 1)
 #' if (require(maps)) {
 #'   states_map <- map_data("state")
 #'   ggplot(crimes, aes(map_id = state)) +
@@ -60,8 +59,13 @@ NULL
 #'     expand_limits(x = states_map$long, y = states_map$lat) +
 #'     facet_wrap( ~ variable)
 #' }
-geom_map <- function(mapping = NULL, data = NULL, map, stat = "identity", ...) {
-
+geom_map <- function(mapping = NULL, data = NULL,
+                     stat = "identity",
+                     ...,
+                     map,
+                     na.rm = FALSE,
+                     show.legend = NA,
+                     inherit.aes = TRUE) {
   # Get map input into correct form
   stopifnot(is.data.frame(map))
   if (!is.null(map$lat)) map$y <- map$lat
@@ -69,14 +73,28 @@ geom_map <- function(mapping = NULL, data = NULL, map, stat = "identity", ...) {
   if (!is.null(map$region)) map$id <- map$region
   stopifnot(all(c("x", "y", "id") %in% names(map)))
 
-  GeomMap$new(geom_params = list(map = map, ...), mapping = mapping,
-    data = data, stat = stat, ...)
+  layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomMap,
+    position = PositionIdentity,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      map = map,
+      na.rm = na.rm,
+      ...
+    )
+  )
 }
 
-GeomMap <- proto(GeomPolygon, {
-  objname <- "map"
-
-  draw_groups <- function(., data, scales, coordinates, map, ...) {
+#' @rdname ggplot2-ggproto
+#' @format NULL
+#' @usage NULL
+#' @export
+GeomMap <- ggproto("GeomMap", GeomPolygon,
+  draw_panel = function(data, panel_params, coord, map) {
     # Only use matching data and map ids
     common <- intersect(data$map_id, map$id)
     data <- data[data$map_id %in% common, , drop = FALSE]
@@ -84,7 +102,7 @@ GeomMap <- proto(GeomPolygon, {
 
     # Munch, then set up id variable for polygonGrob -
     # must be sequential integers
-    coords <- coord_munch(coordinates, map, scales)
+    coords <- coord_munch(coord, map, panel_params)
     coords$group <- coords$group %||% coords$id
     grob_id <- match(coords$group, unique(coords$group))
 
@@ -95,9 +113,10 @@ GeomMap <- proto(GeomPolygon, {
     polygonGrob(coords$x, coords$y, default.units = "native", id = grob_id,
       gp = gpar(
         col = data$colour, fill = alpha(data$fill, data$alpha),
-        lwd = data$size * .pt))
-  }
+        lwd = data$size * .pt
+      )
+    )
+  },
 
-  required_aes <- c("map_id")
-
-})
+  required_aes = c("map_id")
+)

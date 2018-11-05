@@ -1,59 +1,40 @@
 #' Quick plot
 #'
-#' \code{qplot} is the basic plotting function in the ggplot2 package,
-#' designed to be familiar if you're used to \code{\link{plot}}
-#' from the base package. It is a convenient wrapper for creating
-#' a number of different types of plots using a consistent
-#' calling scheme. See \url{http://had.co.nz/ggplot2/book/qplot.pdf}
-#' for the chapter in the \code{ggplot2} book which describes the usage
-#' of \code{qplot} in detail.
+#' `qplot` is a shortcut designed to be familiar if you're used to base
+#' [plot()]. It's a convenient wrapper for creating a number of
+#' different types of plots using a consistent calling scheme. It's great
+#' for allowing you to produce plots quickly, but I highly recommend
+#' learning [ggplot()] as it makes it easier to create
+#' complex graphics.
 #'
-#' @param x x values
-#' @param y y values
-#' @param ... other aesthetics passed for each layer
-#' @param data data frame to use (optional).  If not specified, will create
+#' @param x,y,... Aesthetics passed into each layer
+#' @param data Data frame to use (optional).  If not specified, will create
 #'   one, extracting vectors from the current environment.
-#' @param facets faceting formula to use.  Picks \code{\link{facet_wrap}} or
-#'   \code{\link{facet_grid}} depending on whether the formula is one sided
+#' @param facets faceting formula to use. Picks [facet_wrap()] or
+#'   [facet_grid()] depending on whether the formula is one-
 #'   or two-sided
-#' @param margins whether or not margins will be displayed
-#' @param geom character vector specifying geom to use.  Defaults to
+#' @param margins See `facet_grid`: display marginal facets?
+#' @param geom Character vector specifying geom(s) to draw. Defaults to
 #'  "point" if x and y are specified, and "histogram" if only x is specified.
-#' @param stat character vector specifying statistics to use
-#' @param position character vector giving position adjustment to use
-#' @param xlim limits for x axis
-#' @param ylim limits for y axis
-#' @param log which variables to log transform ("x", "y", or "xy")
-#' @param main character vector or expression for plot title
-#' @param xlab character vector or expression for x axis label
-#' @param ylab character vector or expression for y axis label
-#' @param asp the y/x aspect ratio
-#' @aliases qplot quickplot
-#' @export qplot quickplot
+#' @param stat,position DEPRECATED.
+#' @param xlim,ylim X and y axis limits
+#' @param log Which variables to log transform ("x", "y", or "xy")
+#' @param main,xlab,ylab Character vector (or expression) giving plot title,
+#'   x axis label, and y axis label respectively.
+#' @param asp The y/x aspect ratio
+#' @export
 #' @examples
-#' \donttest{
 #' # Use data from data.frame
-#' qplot(mpg, wt, data=mtcars)
-#' qplot(mpg, wt, data=mtcars, colour=cyl)
-#' qplot(mpg, wt, data=mtcars, size=cyl)
-#' qplot(mpg, wt, data=mtcars, facets=vs ~ am)
+#' qplot(mpg, wt, data = mtcars)
+#' qplot(mpg, wt, data = mtcars, colour = cyl)
+#' qplot(mpg, wt, data = mtcars, size = cyl)
+#' qplot(mpg, wt, data = mtcars, facets = vs ~ am)
 #'
-#' # It will use data from local environment
-#' hp <- mtcars$hp
-#' wt <- mtcars$wt
-#' cyl <- mtcars$cyl
-#' vs <- mtcars$vs
-#' am <- mtcars$am
-#' qplot(hp, wt)
-#' qplot(hp, wt, colour=cyl)
-#' qplot(hp, wt, size=cyl)
-#' qplot(hp, wt, facets=vs ~ am)
-#'
+#' \donttest{
 #' qplot(1:10, rnorm(10), colour = runif(10))
 #' qplot(1:10, letters[1:10])
-#' mod <- lm(mpg ~ wt, data=mtcars)
+#' mod <- lm(mpg ~ wt, data = mtcars)
 #' qplot(resid(mod), fitted(mod))
-#' qplot(resid(mod), fitted(mod), facets = . ~ vs)
 #'
 #' f <- function() {
 #'    a <- 1:10
@@ -61,6 +42,9 @@
 #'    qplot(a, b)
 #' }
 #' f()
+#'
+#' # To set aesthetics, wrap in I()
+#' qplot(mpg, wt, data = mtcars, colour = I("red"))
 #'
 #' # qplot will attempt to guess what geom you want depending on the input
 #' # both x and y supplied = scatterplot
@@ -71,20 +55,48 @@
 #' qplot(y = mpg, data = mtcars)
 #'
 #' # Use different geoms
-#' qplot(mpg, wt, data = mtcars, geom="path")
-#' qplot(factor(cyl), wt, data = mtcars, geom=c("boxplot", "jitter"))
+#' qplot(mpg, wt, data = mtcars, geom = "path")
+#' qplot(factor(cyl), wt, data = mtcars, geom = c("boxplot", "jitter"))
 #' qplot(mpg, data = mtcars, geom = "dotplot")
 #' }
-qplot <- function(x, y = NULL, ..., data, facets = NULL, margins=FALSE, geom = "auto", stat=list(NULL), position=list(NULL), xlim = c(NA, NA), ylim = c(NA, NA), log = "", main = NULL, xlab = deparse(substitute(x)), ylab = deparse(substitute(y)), asp = NA) {
+qplot <- function(x, y, ..., data, facets = NULL, margins = FALSE,
+                  geom = "auto", xlim = c(NA, NA),
+                  ylim = c(NA, NA), log = "", main = NULL,
+                  xlab = NULL, ylab = NULL,
+                  asp = NA, stat = NULL, position = NULL) {
 
-  argnames <- names(as.list(match.call(expand.dots=FALSE)[-1]))
-  arguments <- as.list(match.call()[-1])
+  caller_env <- parent.frame()
 
-  aesthetics <- compact(arguments[.all_aesthetics])
-  aesthetics <- aesthetics[!is.constant(aesthetics)]
-  aes_names <- names(aesthetics)
-  aesthetics <- rename_aes(aesthetics)
-  class(aesthetics) <- "uneval"
+  if (!missing(stat)) warning("`stat` is deprecated", call. = FALSE)
+  if (!missing(position)) warning("`position` is deprecated", call. = FALSE)
+  if (!is.character(geom)) stop("`geom` must be a character vector", call. = FALSE)
+
+  exprs <- rlang::enquos(x = x, y = y, ...)
+  is_missing <- vapply(exprs, rlang::quo_is_missing, logical(1))
+  # treat arguments as regular parameters if they are wrapped into I() or
+  # if they don't have a name that is in the list of all aesthetics
+  is_constant <- (!names(exprs) %in% ggplot_global$all_aesthetics) |
+    vapply(exprs, rlang::quo_is_call, logical(1), name = "I")
+
+  mapping <- new_aes(exprs[!is_missing & !is_constant], env = parent.frame())
+
+  consts <- exprs[is_constant]
+
+  aes_names <- names(mapping)
+  mapping <- rename_aes(mapping)
+
+
+  if (is.null(xlab)) {
+    xlab <- rlang::quo_name(exprs$x)
+  }
+  if (is.null(ylab)) {
+    # Work around quo_name() bug: https://github.com/r-lib/rlang/issues/430
+    if (rlang::quo_is_null(exprs$y)) {
+      ylab <- "NULL"
+    } else {
+      ylab <- rlang::quo_name(exprs$y)
+    }
+  }
 
   if (missing(data)) {
     # If data not explicitly specified, will be pulled from workspace
@@ -94,28 +106,32 @@ qplot <- function(x, y = NULL, ..., data, facets = NULL, margins=FALSE, geom = "
     facetvars <- all.vars(facets)
     facetvars <- facetvars[facetvars != "."]
     names(facetvars) <- facetvars
-    facetsdf <- as.data.frame(lapply(facetvars, get))
+    # FIXME?
+    facetsdf <- as.data.frame(mget(facetvars, envir = caller_env))
     if (nrow(facetsdf)) data <- facetsdf
   }
 
   # Work out plot data, and modify aesthetics, if necessary
   if ("auto" %in% geom) {
-    if (stat == "qq" || "sample" %in% aes_names) {
-      geom[geom == "auto"] <- "point"
-      stat <- "qq"
+    if ("sample" %in% aes_names) {
+      geom[geom == "auto"] <- "qq"
     } else if (missing(y)) {
-      geom[geom == "auto"] <- "histogram"
+      x <- rlang::eval_tidy(mapping$x, data, caller_env)
+      if (is.discrete(x)) {
+        geom[geom == "auto"] <- "bar"
+      } else {
+        geom[geom == "auto"] <- "histogram"
+      }
       if (is.null(ylab)) ylab <- "count"
     } else {
       if (missing(x)) {
-        aesthetics$x <- bquote(seq_along(.(y)), aesthetics)
+        mapping$x <- rlang::quo(seq_along(!!mapping$y))
       }
       geom[geom == "auto"] <- "point"
     }
   }
 
-  env <- parent.frame()
-  p <- ggplot(data, aesthetics, environment = env)
+  p <- ggplot(data, mapping, environment = caller_env)
 
   if (is.null(facets)) {
     p <- p + facet_null()
@@ -128,20 +144,11 @@ qplot <- function(x, y = NULL, ..., data, facets = NULL, margins=FALSE, geom = "
   if (!is.null(main)) p <- p + ggtitle(main)
 
   # Add geoms/statistics
-  if (is.proto(position)) position <- list(position)
-
-  mapply(function(g, s, ps) {
-    if(is.character(g)) g <- Geom$find(g)
-    if(is.character(s)) s <- Stat$find(s)
-    if(is.character(ps)) ps <- Position$find(ps)
-
-    # Have to use non-standard evaluation because we can't evaluate ...
-    params <- arguments[setdiff(names(arguments), c(aes_names, argnames))]
-    # 1: mapply, 2: qplot, 3: caller of qplot
-    params <- lapply(params, eval, parent.frame(3))
-
-    p <<- p + layer(geom=g, stat=s, geom_params=params, stat_params=params, position=ps)
-  }, geom, stat, position)
+  for (g in geom) {
+    # We reevaluate constants once per geom for historical reasons?
+    params <- lapply(consts, rlang::eval_tidy)
+    p <- p + do.call(paste0("geom_", g), params)
+  }
 
   logv <- function(var) var %in% strsplit(log, "")[[1]]
 
@@ -158,9 +165,12 @@ qplot <- function(x, y = NULL, ..., data, facets = NULL, margins=FALSE, geom = "
 
   p
 }
+
+#' @export
+#' @rdname qplot
 quickplot <- qplot
 
-# is.constant
 is.constant <- function(x) {
-  sapply(x, function(x) "I" %in% all.names(asOneSidedFormula(x)))
+  is_I_call <- function(x) is.call(x) && identical(x[[1]], quote(I))
+  vapply(x, is_I_call, logical(1))
 }

@@ -1,39 +1,43 @@
-# Sample .travis.yml for R projects from https://github.com/craigcitro/r-travis
+language: R
+cache: packages
+sudo: true
+dist: trusty
 
-language: c
+# build matrix; turn on vdiffr only on r release
+matrix:
+  include:
+  - r: devel
+  - r: release
+    env: USE_VDIFFR=true
+    r_github_packages:
+    - lionel-/vdiffr
+    - tidyverse/tidytemplate
+    - r-lib/pkgdown
+
+    deploy:
+      provider: script
+      script: Rscript -e 'pkgdown::deploy_site_github(verbose = TRUE)'
+      skip_cleanup: true
+
+  - r: oldrel
+  - r: 3.2
+    env: R_REMOTES_NO_ERRORS_FROM_WARNINGS=true
+  - r: 3.1
+    env: R_REMOTES_NO_ERRORS_FROM_WARNINGS=true
+
+# environment variables set for all builds
+env:
+  global:
+  # don't treat missing suggested packages as error
+  - _R_CHECK_FORCE_SUGGESTS_=false
+  # switch off vdiffr by default
+  - USE_VDIFFR=false
+
+after_success:
+  - Rscript -e 'covr::codecov()'
 
 before_install:
-  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
-  - chmod 755 ./travis-tool.sh
-  - ./travis-tool.sh bootstrap
-
-install:
-  - ./travis-tool.sh r_binary_install colorspace strucchange deldir abind tensor polyclip minqa Rcpp RcppEigen modeltools bdsmatrix RColorBrewer dichromat munsell labeling tripack akima rgl logspline nor1mix Formula zoo dynlm chron acepack rms mice sp rgeos spatstat PBSmapping mvtnorm TH.data sandwich lme4 robustbase mboost coin car xtable lmtest coxme
-  - ./travis-tool.sh install_deps
-
-script: ./travis-tool.sh run_tests
-
-on_failure:
-  - ./travis-tool.sh dump_logs
-
-notifications:
-  email:
-    on_success: change
-    on_failure: change
-
-
-before_deploy:
-  - ./travis-tool.sh install_github hadley/staticdocs
-  - R -e "staticdocs::build_site()"
-
-deploy:
-  edge: true
-
-  provider: s3
-  access_key_id: AKIAJDM6KGIZ6LSGAK4Q
-  secret_access_key:
-    secure: "r3vSpvVNcpvIcjWFyk+GhYG55iuhfmy3mwuQHQS2EqjT3Skd3mOojnZuRIqy60XXElK5/nfa3qt7KH0GCSd4Is28cqPwh+1PtQ0ZVXfeKefAk2whTPDI4P+rgOA+srUxZraLALap9QGmvlzJyXbqBCRdDmXUjtXKi2ONE9PrUk4="
-  bucket: docs.ggplot2.org
-  skip_cleanup: true
-  local-dir: inst/web
-  upload-dir: dev
+  - sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable --yes
+  - sudo apt-get --yes --force-yes update -qq
+  - sudo apt-get install --yes libudunits2-dev libproj-dev libgeos-dev libgdal-dev
+  - Rscript -e 'update.packages(ask = FALSE)'

@@ -1,3 +1,4 @@
+^CRAN-RELEASE$
 visual_test
 ^.*\.Rproj$
 ^\.Rproj\.user$
@@ -5,3 +6,20 @@ visual_test
 ^/\.gitattributes$
 ^inst/web$
 ^notes$
+^cran-comments.md$
+^data-raw$
+^CONTRIBUTING\.md$
+^GOVERNANCE\.md$
+^ISSUE_TEMPLATE\.md$
+^CODE_OF_CONDUCT\.md$
+^NEWS$
+^revdep$
+^\.httr-oauth$
+^codecov\.yml$
+^_pkgdown\.yml$
+^icons$
+^README\.Rmd$
+^README-.*\.png$
+^logo\.png$
+^appveyor\.yml$
+^\.github$

@@ -5,11 +5,16 @@
 #' @export
 #' @keywords internal
 #' @examples
-#' benchplot(qplot(mpg, wt, data = mtcars))
-#' benchplot(qplot(mpg, wt, data = mtcars) + facet_grid(.~ cyl))
-benchplot <- function(x) {
+#' benchplot(ggplot(mtcars, aes(mpg, wt)) + geom_point())
+#' benchplot(ggplot(mtcars, aes(mpg, wt)) + geom_point() + facet_grid(. ~ cyl))
+#'
+#' # With tidy eval:
+#' p <- expr(ggplot(mtcars, aes(mpg, wt)) + geom_point())
+#' benchplot(!!p)
 
-  construct <- system.time(force(x))
+benchplot <- function(x) {
+  x <- enquo(x)
+  construct <- system.time(x <- rlang::eval_tidy(x))
   stopifnot(inherits(x, "ggplot"))
 
   build <- system.time(data <- ggplot_build(x))
@@ -18,7 +23,7 @@ benchplot <- function(x) {
 
   times <- rbind(construct, build, render, draw)[, 1:3]
 
-  unrowname(data.frame(
+  plyr::unrowname(data.frame(
     step = c("construct", "build", "render", "draw", "TOTAL"),
     rbind(times, colSums(times))))
 }

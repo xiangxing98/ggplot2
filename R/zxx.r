@@ -2,62 +2,164 @@
 
 #' @export
 #' @rdname scale_hue
+#' @usage NULL
 scale_colour_discrete <- scale_colour_hue
 
 #' @export
+#' @rdname scale_viridis
+#' @usage NULL
+scale_colour_ordinal <- scale_colour_viridis_d
+
+#' @export
 #' @rdname scale_gradient
-scale_colour_continuous <- scale_colour_gradient
+#' @usage NULL
+scale_colour_datetime <- function(...,
+                                  low = "#132B43",
+                                  high = "#56B1F7",
+                                  space = "Lab",
+                                  na.value = "grey50",
+                                  guide = "colourbar") {
+  datetime_scale(
+    "colour",
+    "time",
+    palette = seq_gradient_pal(low, high, space),
+    na.value = na.value,
+    guide = guide,
+    ...
+  )
+}
+
+#' @export
+#' @rdname scale_gradient
+#' @usage NULL
+scale_colour_date <- function(...,
+                              low = "#132B43",
+                              high = "#56B1F7",
+                              space = "Lab",
+                              na.value = "grey50",
+                              guide = "colourbar") {
+  datetime_scale(
+    "colour",
+    "date",
+    palette = seq_gradient_pal(low, high, space),
+    na.value = na.value,
+    guide = guide,
+    ...
+  )
+}
 
 #' @export
 #' @rdname scale_hue
+#' @usage NULL
 scale_fill_discrete <- scale_fill_hue
 
 #' @export
+#' @rdname scale_viridis
+#' @usage NULL
+scale_fill_ordinal <- scale_fill_viridis_d
+
+#' @export
 #' @rdname scale_gradient
-scale_fill_continuous <- scale_fill_gradient
+#' @usage NULL
+scale_fill_datetime <- function(...,
+                                low = "#132B43",
+                                high = "#56B1F7",
+                                space = "Lab",
+                                na.value = "grey50",
+                                guide = "colourbar") {
+  datetime_scale(
+    "fill",
+    "time",
+    palette = seq_gradient_pal(low, high, space),
+    na.value = na.value,
+    guide = guide,
+    ...
+  )
+}
+
+#' @export
+#' @rdname scale_gradient
+#' @usage NULL
+scale_fill_date <- function(...,
+                            low = "#132B43",
+                            high = "#56B1F7",
+                            space = "Lab",
+                            na.value = "grey50",
+                            guide = "colourbar") {
+  datetime_scale(
+    "fill",
+    "date",
+    palette = seq_gradient_pal(low, high, space),
+    na.value = na.value,
+    guide = guide,
+    ...
+  )
+}
+
 
 # British to American spellings ----------------------------------------------
 
 #' @export
 #' @rdname scale_brewer
+#' @usage NULL
 scale_color_brewer <- scale_colour_brewer
 
 #' @export
 #' @rdname scale_brewer
+#' @usage NULL
 scale_color_distiller <- scale_colour_distiller
 
 #' @export
 #' @rdname scale_gradient
+#' @usage NULL
 scale_color_continuous <- scale_colour_gradient
 
 #' @export
 #' @rdname scale_hue
+#' @usage NULL
 scale_color_discrete <- scale_colour_hue
 
 #' @export
 #' @rdname scale_gradient
+#' @usage NULL
 scale_color_gradient <- scale_colour_gradient
 
 #' @export
-#' @rdname scale_gradient2
+#' @rdname scale_gradient
+#' @usage NULL
 scale_color_gradient2 <- scale_colour_gradient2
 
 #' @export
-#' @rdname scale_gradientn
+#' @rdname scale_gradient
+#' @usage NULL
 scale_color_gradientn <- scale_colour_gradientn
 
 #' @export
 #' @rdname scale_grey
+#' @usage NULL
 scale_color_grey <- scale_colour_grey
 
 #' @export
 #' @rdname scale_hue
+#' @usage NULL
 scale_color_hue <- scale_colour_hue
 
 #' @export
 #' @rdname scale_identity
+#' @usage NULL
 scale_color_identity <- scale_colour_identity
 
 #' @export
 #' @rdname scale_manual
+#' @usage NULL
 scale_color_manual <- scale_colour_manual
+
+#' @export
+#' @rdname scale_viridis
+#' @usage NULL
+scale_color_viridis_d <- scale_colour_viridis_d
+
+#' @export
+#' @rdname scale_viridis
+#' @usage NULL
+scale_color_viridis_c <- scale_colour_viridis_c

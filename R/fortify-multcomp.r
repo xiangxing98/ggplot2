@@ -1,9 +1,10 @@
 #' Fortify methods for objects produced by \pkg{multcomp}
 #'
-#' @param model an object of class \code{glht}, \code{confint.glht},
-#'  \code{summary.glht} or \code{\link[multcomp]{cld}}
+#' @param model an object of class `glht`, `confint.glht`,
+#'  `summary.glht` or [multcomp::cld()]
 #' @param data,... other arguments to the generic ignored in this method.
 #' @name fortify-multcomp
+#' @keywords internal
 #' @examples
 #' if (require("multcomp")) {
 #' amod <- aov(breaks ~ wool + tension, data = warpbreaks)
@@ -32,10 +33,10 @@ NULL
 #' @rdname fortify-multcomp
 #' @export
 fortify.glht <- function(model, data, ...) {
-  unrowname(data.frame(
+  plyr::unrowname(data.frame(
     lhs = rownames(model$linfct),
     rhs = model$rhs,
-    estimate = coef(model),
+    estimate = stats::coef(model),
     check.names = FALSE,
     stringsAsFactors = FALSE))
 }
@@ -47,7 +48,7 @@ fortify.confint.glht <- function(model, data, ...) {
   coef <- model$confint
   colnames(coef) <- tolower(colnames(coef))
 
-  unrowname(data.frame(
+  plyr::unrowname(data.frame(
     lhs = rownames(coef),
     rhs = model$rhs,
     coef,
@@ -63,7 +64,7 @@ fortify.summary.glht <- function(model, data, ...) {
     model$test[c("coefficients", "sigma", "tstat", "pvalues")])
   names(coef) <- c("estimate", "se", "t", "p")
 
-  unrowname(data.frame(
+  plyr::unrowname(data.frame(
     lhs = rownames(coef),
     rhs = model$rhs,
     coef,
@@ -76,7 +77,7 @@ fortify.summary.glht <- function(model, data, ...) {
 #' @rdname fortify-multcomp
 #' @export
 fortify.cld <- function(model, data, ...) {
-  unrowname(data.frame(
+  plyr::unrowname(data.frame(
     lhs = names(model$mcletters$Letters),
     letters = model$mcletters$Letters,
     check.names = FALSE,
